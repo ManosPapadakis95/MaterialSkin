@@ -562,12 +562,21 @@ namespace MaterialSkin.Controls
                 }
             }
 
+            var TitleX = SkinManager.FORM_PADDING;
+            
+            if(this.InitializeComponent != null){
+                var IconY = STATUS_BAR_HEIGHT + 8;
+                TitleX += this.Icon.Width + 6;
+
+                g.DrawIcon(this.Icon, new Rectangle(SkinManager.FORM_PADDING, IconY, this.Icon.Width, this.Icon.Height));
+            }
+
             //Form title
-            g.DrawString(Text, SkinManager.ROBOTO_MEDIUM_12, SkinManager.ColorScheme.TextBrush, new Rectangle(SkinManager.FORM_PADDING, STATUS_BAR_HEIGHT, Width, ACTION_BAR_HEIGHT), new StringFormat { LineAlignment = StringAlignment.Center });
+            g.DrawString(Text, SkinManager.ROBOTO_MEDIUM_10, SkinManager.ColorScheme.TextBrush, new Rectangle(TitleX, STATUS_BAR_HEIGHT, Width, ACTION_BAR_HEIGHT), new StringFormat { LineAlignment = StringAlignment.Center });
         }
 
         public void InitializeComponent(){
-            
+
         }
     }
 
