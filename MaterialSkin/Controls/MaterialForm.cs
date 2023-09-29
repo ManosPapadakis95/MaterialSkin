@@ -157,6 +157,7 @@ namespace MaterialSkin.Controls
 
         public MaterialForm()
         {
+            InitializeComponent();
             FormBorderStyle = FormBorderStyle.None;
             Sizable = true;
             DoubleBuffered = true;
@@ -563,6 +564,10 @@ namespace MaterialSkin.Controls
 
             //Form title
             g.DrawString(Text, SkinManager.ROBOTO_MEDIUM_12, SkinManager.ColorScheme.TextBrush, new Rectangle(SkinManager.FORM_PADDING, STATUS_BAR_HEIGHT, Width, ACTION_BAR_HEIGHT), new StringFormat { LineAlignment = StringAlignment.Center });
+        }
+
+        public void InitializeComponent(){
+            
         }
     }
 
