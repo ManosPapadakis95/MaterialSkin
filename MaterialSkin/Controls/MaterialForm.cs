@@ -21,6 +21,9 @@ namespace MaterialSkin.Controls
         public bool Sizable { get; set; }
 
         [DllImport("user32.dll")]
+        public static extern IntPtr PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll")]
         public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
 
         [DllImport("user32.dll")]
@@ -45,6 +48,7 @@ namespace MaterialSkin.Controls
         public const int WM_LBUTTONUP = 0x0202;
         public const int WM_LBUTTONDBLCLK = 0x0203;
         public const int WM_RBUTTONDOWN = 0x0204;
+        private const int SC_CONTEXTHELP = 0xF180;
         private const int HTBOTTOMLEFT = 16;
         private const int HTBOTTOMRIGHT = 17;
         private const int HTLEFT = 10;
@@ -136,6 +140,8 @@ namespace MaterialSkin.Controls
             XOver,
             MaxOver,
             MinOver,
+            HelpOver, //Help over
+            HelpDown, //Help down
             XDown,
             MaxDown,
             MinDown,
@@ -267,8 +273,12 @@ namespace MaterialSkin.Controls
             if (DesignMode) return;
             UpdateButtons(e);
 
-            if (e.Button == MouseButtons.Left && !_maximized)
+            if (e.Button == MouseButtons.Left && !_maximized && _buttonState != ButtonState.HelpDown)
                 ResizeForm(_resizeDir);
+            else if (_buttonState == ButtonState.HelpDown)
+            {
+                _ = SendMessage(Handle, WM_SYSCOMMAND, SC_CONTEXTHELP, 0);
+            }
             base.OnMouseDown(e);
         }
 
@@ -346,10 +356,13 @@ namespace MaterialSkin.Controls
             var oldState = _buttonState;
             bool showMin = MinimizeBox && ControlBox;
             bool showMax = MaximizeBox && ControlBox;
+            bool showHelp = HelpButton && !MinimizeBox && !MaximizeBox && ControlBox;
 
             if (e.Button == MouseButtons.Left && !up)
             {
-                if (showMin && !showMax && _maxButtonBounds.Contains(e.Location))
+                if (showHelp && _maxButtonBounds.Contains(e.Location))
+                    _buttonState = ButtonState.HelpDown;
+                else if (showMin && !showMax && _maxButtonBounds.Contains(e.Location))
                     _buttonState = ButtonState.MinDown;
                 else if (showMin && showMax && _minButtonBounds.Contains(e.Location))
                     _buttonState = ButtonState.MinDown;
@@ -362,7 +375,11 @@ namespace MaterialSkin.Controls
             }
             else
             {
-                if (showMin && !showMax && _maxButtonBounds.Contains(e.Location))
+                if (showHelp && _maxButtonBounds.Contains(e.Location))
+                {
+                    _buttonState = ButtonState.HelpOver;
+                }
+                else if (showMin && !showMax && _maxButtonBounds.Contains(e.Location))
                 {
                     _buttonState = ButtonState.MinOver;
 
@@ -491,8 +508,17 @@ namespace MaterialSkin.Controls
             // Determine whether or not we even should be drawing the buttons.
             bool showMin = MinimizeBox && ControlBox;
             bool showMax = MaximizeBox && ControlBox;
+            bool showHelp = HelpButton && !MinimizeBox && !MaximizeBox && ControlBox;
             var hoverBrush = SkinManager.GetFlatButtonHoverBackgroundBrush();
             var downBrush = SkinManager.GetFlatButtonPressedBackgroundBrush();
+            
+            // When MaximizeButton == false and MinimizeButton == false and HelpButton == true,
+            // the help button will be painted in maximize button's place 
+            if (_buttonState == ButtonState.HelpOver && showHelp)
+                g.FillRectangle(hoverBrush, _maxButtonBounds);
+
+            if (_buttonState == ButtonState.HelpDown && showHelp)
+                g.FillRectangle(downBrush, _maxButtonBounds);
 
             // When MaximizeButton == false, the minimize button will be painted in its place
             if (_buttonState == ButtonState.MinOver && showMin)
@@ -540,6 +566,18 @@ namespace MaterialSkin.Controls
                         (int)(_maxButtonBounds.Width * 0.39),
                         (int)(_maxButtonBounds.Height * 0.31)
                    );
+                }
+
+                // Help button
+                if (showHelp)
+                {
+                    g.DrawString(
+                        "?", 
+                        new Font("callibri", 10.0f), 
+                        formButtonsPen.Brush,
+                        _maxButtonBounds.X + (int)(_maxButtonBounds.Width * 0.27),
+                        _maxButtonBounds.Y + (int)(_maxButtonBounds.Height * 0.24)
+                    );
                 }
 
                 // Close button
